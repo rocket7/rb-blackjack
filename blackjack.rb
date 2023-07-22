@@ -98,7 +98,7 @@ end
 
 
 
-class Cards 
+class DeckOfCards 
 
   attr_accessor :shuffled_deck
 
@@ -158,7 +158,7 @@ class Cards
 
 
   def print_deck
-    puts @shuffleddeck
+    puts @shuffled_deck
     #puts @shuffleddeck[0][0] #Spade
   end
   
@@ -167,7 +167,7 @@ class Cards
   end
 end
 
-class Blackjack < Cards
+class Blackjack < DeckOfCards
   attr_accessor :dealer
   attr_accessor :player
 
@@ -179,14 +179,15 @@ class Blackjack < Cards
     @instance_variable = 1
     @dealer = Dealer.new
     @player = Bettor.new
-    @deckofcards = Cards.new
+    @deckofcards = DeckOfCards.new
     @hands_dealt = 0
     @cards_hand = 0
+    @winner = false
   end
   
   # def create_deck
   #   #To reinitialize deck after game
-  #   @deckofcards = Cards.new
+  #   @deckofcards = DeckOfCards.new
   # end
 
   # def shuffle_cards
@@ -213,22 +214,9 @@ class Blackjack < Cards
   end
 
   def hit_card()
-    #player.cards << @deckofcards.deal_card(1)
-    new_card = true
-    while new_card == true do
-      puts "[Player] Do you want to hit? [y|n]"
-      player_input = gets.chomp
-      if player_input.downcase == 'y'
-        #@player.cards << @deckofcards.deal_card(1)
-        @player.cards << @deckofcards.shuffled_deck.pop
-        @player.count = count_cards(@player)
-        puts "[Player] Card total count: #{@player.count}"
-        new_card = true
-      else
-        new_card = false
-        break
-      end
-    end
+    @player.cards << @deckofcards.shuffled_deck.pop
+    @player.count = count_cards(@player)
+    get_player_hand
   end
 
   def dealer_hit_card
@@ -254,52 +242,63 @@ class Blackjack < Cards
   def get_player_hand()
     p "Player #{@player.name} has following cards"
     p "Cards: #{@player.get_cards}"
-    p "Count: #{@player.count}"
-
+    p "Player Card Count: #{@player.count}"
+    p ""
   end
 
   def get_dealer_hand()
     p "Dealer #{@dealer.name} has following cards"
     p "Cards: #{@dealer.get_cards}"
-    p "Count: #{@dealer.count}"
+    p "Dealer Card Count: #{@dealer.count}"
+    p ""
   end
 
   def game_summary()
-    puts "Dealer has #{@dealer.get_cards}\nCard count #{count_cards(@dealer)}"
-    puts "Player has #{@player.get_cards}\nCard count #{count_cards(@player)}"
+    puts "Dealer has #{@dealer.get_cards}\nDealer Card count #{count_cards(@dealer)}"
+    puts "Player has #{@player.get_cards}\nPlayer Card count #{count_cards(@player)}"
+  end
+
+  def eval_scores()
+    if  @dealer.count < 17
+      dealer_hit_card()
+      puts game_summary
+    elsif @player.count == 21 && @dealer.count == 21
+      puts game_summary
+      puts "Both player and dealer have Blackjack! Push!"
+      @winner = true
+    elsif @player.count == 21 && @dealer.count < 21 && @dealer.count >= 17
+      puts game_summary
+      puts "Player has Blackjack! Winner!"
+      @winner = true
+    elsif @player.count > 21 && @dealer.count <= 21
+      puts game_summary
+      puts "Dealer wins.  Player has more than 21 and losses!"
+      @winner = true
+    elsif @dealer.count > 21 && @player.count <= 21
+      puts game_summary
+      puts "Player wins.  Dealer has more than 21 and losses!"
+      @winner = true
+    elsif @dealer.count == 21 && @dealer.count > @player.count 
+      puts game_summary
+      puts "Dealer has Blackjack! - Winner!"
+      @winner = true
+    end
   end
 
   def check_scores()
-    @winner = false
+
     while @winner == false do
       puts "[Player] Do you want to hit? [y|n]"
       player_input = gets.chomp
       if player_input.downcase == 'y'
         hit_card()
         puts game_summary
-      elsif  @dealer.count < 17
-        dealer_hit_card()
-        puts game_summary
-      elsif @player.count == 21 && @dealer.count == 21
-        puts game_summary
-        puts "Both player and dealer have Blackjack! Push!"
-        @winner = true
-      elsif @player.count == 21 && @dealer.count < 21 && @dealer.count >= 17
-        puts game_summary
-        puts "Player has Blackjack!"
-        @winner = true
-      elsif @player.count > 21 && @dealer.count <= 21
-        puts game_summary
-        puts "Dealer wins.  Player has more than 21 and losses!"
-        @winner = true
-      elsif @dealer.count > 21 && @player.count <= 21
-        puts game_summary
-        puts "Player wins.  Dealer has more than 21 and losses!"
-        @winner = true
-      elsif @dealer.count == 21 && @dealer.count > @player.count 
-        puts game_summary
-        puts "Dealer has Blackjack!"
-        @winner = true
+        eval_scores()
+      elsif player_input.downcase == 'n'
+        while @dealer.count < 17 do
+          dealer_hit_card()
+        end
+        eval_scores()
       end
     end
   end
@@ -308,6 +307,8 @@ end
 ################################
 
 # Start Program
+# COMMAND CLASS
+
 p "Would you like to play Blackjack? [y|n]"
 play_cards = gets.chomp
 if play_cards.downcase == "y"
